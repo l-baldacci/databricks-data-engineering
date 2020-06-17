@@ -18,7 +18,7 @@ spark.sql("SHOW databases").show()
 spark.sql("USE lorenzo_baldacci_test").show()
 spark.sql("SHOW tables").show()
 
-print("End testing simple count")
+print("End testing simple count.")
 
 # cdcDf = spark.read.load("examples/src/main/resources/file.csv", format="csv", sep=",", inferSchema="true", header="true").cache()
 #
