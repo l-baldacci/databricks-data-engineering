@@ -3,6 +3,10 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+# Takes the variables from the Databricks-environment group defined in the Library tab.
+variables:
+- group: Databricks-environment
+
 trigger:
 - master
 
@@ -10,10 +14,25 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: UsePythonVersion@0
+  displayName: 'Use Python 3.7'
+  inputs:
+    versionSpec: 3.7
 
+# Install required Python modules, including databricks-connect, required to execute a unit test
+# on a cluster.
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    pip install pytest requests setuptools wheel
+    pip install -U databricks-connect==6.4.*
+  displayName: 'Load Python Dependencies'
+
+# Use environment variables to pass Databricks login information to the Databricks Connect
+# configuration function
+- script: |
+    echo "y
+    $(WORKSPACE-REGION-URL)
+    $(TOKEN)
+    $(EXISTING-CLUSTER-ID)
+    $(WORKSPACE-ORG-ID)
+    15001" | databricks-connect configure
+  displayName: 'Configure DBConnect'
