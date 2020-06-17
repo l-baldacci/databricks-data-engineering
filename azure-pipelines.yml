@@ -36,3 +36,17 @@ steps:
     $(WORKSPACE-ORG-ID)
     15001" | databricks-connect configure
   displayName: 'Configure DBConnect'
+
+#Get the latest changes: downloads code from the designated branch to the agent execution agent.
+- checkout: self
+  persistCredentials: true
+  clean: true
+
+- script: git checkout master
+  displayName: 'Get Latest Branch'
+
+#Invoke the unit tests, specifying the name and location for both the tests and the output files
+- script: |
+    python -m pytest --junit-xml=$(Build.Repository.LocalPath)/logs/TEST-LOCAL.xml $(Build.Repository.LocalPath)/test_*.py || true
+    ls logs
+  displayName: 'Run Python Unit Tests for library code'
