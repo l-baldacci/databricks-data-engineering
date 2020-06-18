@@ -58,3 +58,25 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     failTaskOnFailedTests: true
     publishRunAttachments: true
+
+# Use git diff to flag files added in the most recent git merge. 
+# In this example we are actually copying every file to the Binaries directory.
+- script: |
+    git diff --name-only --diff-filter=AMR HEAD^1 HEAD | xargs -I '{}' cp --parents -r '{}' $(Build.BinariesDirectory)
+
+    cp $(Build.Repository.LocalPath)/*.* $(Build.BinariesDirectory)
+    ls $(Build.BinariesDirectory)
+  displayName: 'Get Changes'
+
+# Create the deployment artifact and publish it to the artifact repository
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.BinariesDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    ArtifactName: 'DatabricksBuild'
