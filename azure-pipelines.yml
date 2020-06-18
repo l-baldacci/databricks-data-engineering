@@ -50,3 +50,11 @@ steps:
     python -m pytest --junit-xml=$(Build.Repository.LocalPath)/logs/TEST-LOCAL.xml $(Build.Repository.LocalPath)/test_*.py || true
     ls logs
   displayName: 'Run Python Unit Tests for library code'
+
+#After all unit tests have been executed, publish the results to Azure DevOps. 
+#This lets you visualize reports and dashboards related to the status of the build process.
+- task: PublishTestResults@2
+  inputs:
+    testResultsFiles: '**/TEST-*.xml'
+    failTaskOnFailedTests: true
+    publishRunAttachments: true
