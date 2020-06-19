@@ -92,11 +92,13 @@ stages:
   displayName: Deploy release in pre-prod
   dependsOn: Build
   condition: |
-     and(
-     succeeded(),
-     startsWith(variables['Build.SourceBranch'], 'refs/pull'),
-     eq(variables['Build.SourceBranch'], 'refs/heads/release')
-     )
+    and(
+      succeeded(),
+      or(
+        startsWith(variables['Build.SourceBranch'], 'refs/pull'),
+        eq(variables['Build.SourceBranch'], 'refs/heads/release')
+      )
+    )
 
   jobs:
   - job: Release
