@@ -1,4 +1,5 @@
-# Entry point for job -
+# Entry point for a job
+
 
 from pyspark.sql import SparkSession
 from validation import *
