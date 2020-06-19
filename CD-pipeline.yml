@@ -99,10 +99,7 @@ stages:
   condition: |
     and(
       succeeded(),
-      or(
-        startsWith(variables['Build.SourceBranch'], 'refs/pull'),
-        eq(variables['Build.SourceBranch'], 'refs/heads/release')
-      )
+      eq(variables['Build.SourceBranch'], 'refs/heads/release')
     )
 
   jobs:
