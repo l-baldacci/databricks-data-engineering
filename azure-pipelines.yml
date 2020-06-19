@@ -137,5 +137,5 @@ stages:
       displayName: 'Import the code'
 
     - script: |       
-        databricks jobs run-now --job-id 3257
+        databricks jobs run-now --profile AZDO --job-id 3257
       displayName: 'Run integration tests'
