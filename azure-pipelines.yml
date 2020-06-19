@@ -44,9 +44,18 @@ stages:
     - checkout: self
       persistCredentials: true
       clean: true
+      displayName: 'Checkout & Build.Reason: $(Build.Reason) & Build.SourceBranchName: $(Build.SourceBranchName)'
 
-    - script: git checkout master
-      displayName: 'Get Latest Branch'
+    #- script: git checkout develop
+    #  displayName: 'Get Latest Branch'
+
+    - script: |
+        echo "Build.SourceBranchName: $(Build.SourceBranchName)"
+        if [ $(Build.SourceBranchName) != "master" ]
+        then
+          git checkout $(Build.SourceBranchName)
+        fi
+      displayName: 'Get Latest from Branch $(Build.SourceBranchName) if not in PR'
 
     #Invoke the unit tests, specifying the name and location for both the tests and the output files
     - script: |
