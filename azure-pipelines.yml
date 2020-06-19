@@ -81,12 +81,16 @@ stages:
         rootFolderOrFile: '$(Build.BinariesDirectory)'
         includeRootFolder: false
         archiveType: 'zip'
+        #archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
 
+    #Publishing the artifact makes it available across stages.
     - task: PublishBuildArtifacts@1
       inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         ArtifactName: 'DatabricksBuild'
+
 
 - stage: Release
   displayName: Deploy release in production
@@ -107,11 +111,18 @@ stages:
       inputs:
         versionSpec: 3.7
   
+    #Download the artifact generated in the previous stage
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: DatabricksBuild
+        patterns: '**/*.zip'
+        path: $(System.DefaultWorkingDirectory)/artifact
+
     - task: ExtractFiles@1
       displayName: 'Extract the archive'
       inputs:
-        archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        destinationFolder: '$(System.DefaultWorkingDirectory)/build'
+        archiveFilePatterns: '$(System.DefaultWorkingDirectory)/artifact/$(Build.BuildId).zip'
+        destinationFolder: '$(System.DefaultWorkingDirectory)/extract'
         cleanDestinationFolder: true
 
     - task: riserrad.azdo-databricks.azdo-databricks-configuredatabricks.configuredatabricks@0
@@ -121,6 +132,6 @@ stages:
       displayName: 'Configure Databricks CLI for AZDO'
 
     - script: |
-        databricks workspace import $(System.DefaultWorkingDirectory)/build/*.py /Users/lorenzo.baldacci@databricks.com/staging --language PYTHON -o --profile AZDO
+        databricks workspace import $(System.DefaultWorkingDirectory)/extract/*.py /Users/lorenzo.baldacci@databricks.com/staging --language PYTHON -o --profile AZDO
       displayName: 'Import the code'
 
