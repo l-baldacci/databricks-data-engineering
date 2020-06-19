@@ -40,6 +40,11 @@ stages:
         15001" | databricks-connect configure
       displayName: 'Configure DBConnect'
 
+    - script: |
+        echo $(Build.SourceBranchName)
+        echo $(Build.SourceBranch)
+      displayName: 'Echo Branch Variable'
+
     # Get the latest changes: downloads code from the designated branch to the agent execution agent.
     - checkout: self
       persistCredentials: true
@@ -94,10 +99,7 @@ stages:
   condition: |
     and(
       succeeded(),
-      or(
-        startsWith(variables['Build.SourceBranch'], 'refs/pull'),
-        eq(variables['Build.SourceBranch'], 'refs/heads/release')
-      )
+      eq(variables['Build.SourceBranch'], 'refs/heads/release')
     )
 
   jobs:
