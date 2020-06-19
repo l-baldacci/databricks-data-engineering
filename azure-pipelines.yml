@@ -107,8 +107,20 @@ stages:
       inputs:
         versionSpec: 3.7
   
+    - task: ExtractFiles@1
+      displayName: 'Extract the archive'
+      inputs:
+        archiveFilePatterns: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        destinationFolder: '$(System.DefaultWorkingDirectory)/build'
+        cleanDestinationFolder: true
+
     - task: riserrad.azdo-databricks.azdo-databricks-configuredatabricks.configuredatabricks@0
       inputs:
         url: '$(WORKSPACE_REGION_URL)/?o=$(WORKSPACE_ORG_ID)'
         token: '$(DATABRICKS_TOKEN)'
       displayName: 'Configure Databricks CLI for AZDO'
+
+    - script: |
+        databricks workspace import $(System.DefaultWorkingDirectory)/build/*.py /Users/lorenzo.baldacci@databricks.com/staging --language PYTHON -o --profile AZDO
+      displayName: 'Import the code'
+
