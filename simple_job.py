@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 # Entry point
+=======
+# Entry point 1
+
+>>>>>>> release
 from pyspark.sql import SparkSession
 from validation import *
 
