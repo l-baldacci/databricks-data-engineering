@@ -127,8 +127,8 @@ stages:
 
     - task: riserrad.azdo-databricks.azdo-databricks-configuredatabricks.configuredatabricks@0
       inputs:
-        url: '$(WORKSPACE_REGION_URL)/?o=$(WORKSPACE_ORG_ID)'
-        token: '$(DATABRICKS_TOKEN)'
+        url: '$(WORKSPACE-REGION-URL)/?o=$(WORKSPACE-ORG-ID)'
+        token: '$(TOKEN)'
       displayName: 'Configure Databricks CLI for AZDO'
 
     - script: |       
