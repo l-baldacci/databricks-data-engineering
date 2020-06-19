@@ -1,0 +1,145 @@
+# Takes the variables from the Databricks-environment group defined in the Library tab.
+variables:
+- group: Databricks-environment
+
+trigger:
+- release
+
+stages:
+- stage: Build
+  displayName: Build artifact
+  #condition: eq(variables['Build.SourceBranch'], 'develop')
+
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-18.04'
+
+    steps:
+    - task: UsePythonVersion@0
+      displayName: 'Use Python 3.7'
+      inputs:
+        versionSpec: 3.7
+
+    # Install required Python modules, including databricks-connect, required to execute a unit test
+    # on a cluster.
+    - script: |
+        pip install pytest requests setuptools wheel
+        pip install -U databricks-connect==6.4.*
+      displayName: 'Load Python Dependencies'
+
+    # Use environment variables to pass Databricks login information to the Databricks Connect
+    # configuration function
+    - script: |
+        echo "y
+        $(WORKSPACE-REGION-URL)
+        $(TOKEN)
+        $(EXISTING-CLUSTER-ID)
+        $(WORKSPACE-ORG-ID)
+        15001" | databricks-connect configure
+      displayName: 'Configure DBConnect'
+
+    # Get the latest changes: downloads code from the designated branch to the agent execution agent.
+    - checkout: self
+      persistCredentials: true
+      clean: true
+      displayName: 'Checkout'
+
+    - script: git checkout develop
+      displayName: 'Get Latest Branch'
+
+    #- script: |
+    #    echo "Build.SourceBranchName: $(Build.SourceBranchName)"
+    #    if [ $(Build.SourceBranchName) != "master" ]
+    #    then
+    #      git checkout $(Build.SourceBranchName)
+    #    fi
+    #  displayName: 'Get Latest from Branch $(Build.SourceBranchName) if not in PR'
+
+    #Invoke the unit tests, specifying the name and location for both the tests and the output files
+    - script: |
+        python -m pytest --junit-xml=$(Build.Repository.LocalPath)/logs/TEST-LOCAL.xml $(Build.Repository.LocalPath)/test_*.py || true
+        ls logs
+      displayName: 'Run Python Unit Tests for library code'
+
+    #After all unit tests have been executed, publish the results to Azure DevOps. 
+    #This lets you visualize reports and dashboards related to the status of the build process.
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: '**/TEST-*.xml'
+        failTaskOnFailedTests: true
+        publishRunAttachments: true
+
+    # Use git diff to flag files added in the most recent git merge. 
+    # In this example we are actually copying every file to the Binaries directory.
+    - script: |
+        git diff --name-only --diff-filter=AMR HEAD^1 HEAD | xargs -I '{}' cp --parents -r '{}' $(Build.BinariesDirectory)
+
+        cp $(Build.Repository.LocalPath)/*.* $(Build.BinariesDirectory)
+        ls $(Build.BinariesDirectory)
+      displayName: 'Get Changes'
+
+    # Create the deployment artifact and publish it to the artifact repository
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.BinariesDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        #archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+
+    #Publishing the artifact makes it available across stages.
+    - task: PublishBuildArtifacts@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        ArtifactName: 'DatabricksBuild'
+
+
+- stage: Release
+  displayName: Deploy release in production
+  dependsOn: Build
+  condition: succeeded()
+
+  jobs:
+  - job: Release
+    pool:
+      vmImage: 'ubuntu-18.04'
+
+    steps:
+    - script: env | sort
+      displayName: 'Environment / Context'
+    
+    - task: UsePythonVersion@0
+      displayName: 'Use Python 3.7'
+      inputs:
+        versionSpec: 3.7
+  
+    #Download the artifact generated in the previous stage
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: DatabricksBuild
+        patterns: '**/*.zip'
+        path: $(System.DefaultWorkingDirectory)/artifact
+
+    - task: ExtractFiles@1
+      displayName: 'Extract the archive'
+      inputs:
+        archiveFilePatterns: '$(System.DefaultWorkingDirectory)/artifact/$(Build.BuildId).zip'
+        destinationFolder: '$(System.DefaultWorkingDirectory)/extract'
+        cleanDestinationFolder: true
+
+    - task: riserrad.azdo-databricks.azdo-databricks-configuredatabricks.configuredatabricks@0
+      inputs:
+        url: '$(WORKSPACE-REGION-URL)/?o=$(WORKSPACE-ORG-ID)'
+        token: '$(TOKEN)'
+      displayName: 'Configure Databricks CLI for AZDO'
+
+    - script: |       
+        databricks fs cp --profile AZDO --overwrite $(System.DefaultWorkingDirectory)/artifact/$(Build.BuildId).zip dbfs:/Users/lorenzo.baldacci@databricks.com/jobs/test/simple_job.zip
+        databricks fs cp --profile AZDO --overwrite $(System.DefaultWorkingDirectory)/extract/simple_job.py dbfs:/Users/lorenzo.baldacci@databricks.com/jobs/test/simple_job.py
+      displayName: 'Import the code'
+
+    - script: |       
+        databricks jobs run-now --profile AZDO --job-id 3257
+      displayName: 'Run integration tests'
