@@ -42,11 +42,8 @@ stages:
 
     - script: |
         echo $(Build.SourceBranchName)
+        echo $(Build.SourceBranch)
       displayName: 'Echo Branch Variable'
-
-    - script: |
-        echo $(Build)
-      displayName: 'Echo Build'
 
     # Get the latest changes: downloads code from the designated branch to the agent execution agent.
     - checkout: self
