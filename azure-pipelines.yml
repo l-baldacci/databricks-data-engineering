@@ -40,7 +40,7 @@ stages:
         15001" | databricks-connect configure
       displayName: 'Configure DBConnect'
 
-    Get the latest changes: downloads code from the designated branch to the agent execution agent.
+    # Get the latest changes: downloads code from the designated branch to the agent execution agent.
     - checkout: self
       persistCredentials: true
       clean: true
