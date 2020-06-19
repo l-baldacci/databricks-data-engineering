@@ -131,7 +131,8 @@ stages:
         token: '$(DATABRICKS_TOKEN)'
       displayName: 'Configure Databricks CLI for AZDO'
 
-    - script: |
-        databricks workspace import $(System.DefaultWorkingDirectory)/extract/*.py /Users/lorenzo.baldacci@databricks.com/staging --language PYTHON -o --profile AZDO
+    - script:        
+        databricks fs cp --overwrite '$(System.DefaultWorkingDirectory)/artifact/$(Build.BuildId).zip' dbfs:/Users/lorenzo.baldacci@databricks.com/jobs/test/simple_job.zip --profile AZDO
+        databricks fs cp --overwrite $(System.DefaultWorkingDirectory)/extract/simple_job.py dbfs:/Users/lorenzo.baldacci@databricks.com/jobs/test/simple_job.py --profile AZDO
       displayName: 'Import the code'
 
