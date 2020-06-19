@@ -1,4 +1,4 @@
-# Entry point for a job
+# Entry point
 
 
 from pyspark.sql import SparkSession
