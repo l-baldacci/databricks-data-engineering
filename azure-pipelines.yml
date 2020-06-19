@@ -12,7 +12,8 @@ trigger:
 
 stages:
 - stage: Build
-  condition: eq(variables['Build.SourceBranch'], 'master')
+  displayName: Build artifact
+  #condition: eq(variables['Build.SourceBranch'], 'master')
 
   jobs:
   - job: Build
@@ -88,6 +89,7 @@ stages:
         ArtifactName: 'DatabricksBuild'
 
 - stage: Release
+  displayName: Deploy release in production
   dependsOn: Build
   condition: succeeded()
 
@@ -99,3 +101,14 @@ stages:
     steps:
     - script: env | sort
       displayName: 'Environment / Context'
+    
+    - task: UsePythonVersion@0
+      displayName: 'Use Python 3.7'
+      inputs:
+        versionSpec: 3.7
+  
+    - task: riserrad.azdo-databricks.azdo-databricks-configuredatabricks.configuredatabricks@0
+      inputs:
+        url: '$(WORKSPACE_REGION_URL)/?o=$(WORKSPACE_ORG_ID)'
+        token: '$(DATABRICKS_TOKEN)'
+      displayName: 'Configure Databricks CLI for AZDO'
