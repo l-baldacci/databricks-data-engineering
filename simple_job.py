@@ -1,4 +1,4 @@
-# Entry point 1
+# Entry point 2
 
 from pyspark.sql import SparkSession
 from validation import *
