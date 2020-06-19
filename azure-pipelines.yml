@@ -1,19 +1,15 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 # Takes the variables from the Databricks-environment group defined in the Library tab.
 variables:
 - group: Databricks-environment
 
 trigger:
-- master
+- develop
+- release
 
 stages:
 - stage: Build
   displayName: Build artifact
-  #condition: eq(variables['Build.SourceBranch'], 'master')
+  #condition: eq(variables['Build.SourceBranch'], 'develop')
 
   jobs:
   - job: Build
@@ -95,7 +91,11 @@ stages:
 - stage: Release
   displayName: Deploy release in production
   dependsOn: Build
-  condition: succeeded()
+  condition: 
+    and(
+      succeeded(),
+      eq(variables['Build.SourceBranch'], 'release')
+    )
 
   jobs:
   - job: Release
