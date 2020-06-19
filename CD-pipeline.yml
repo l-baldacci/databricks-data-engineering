@@ -4,6 +4,7 @@ variables:
 
 trigger:
 - release
+- develop
 
 stages:
 - stage: Build
@@ -90,7 +91,12 @@ stages:
 - stage: Release
   displayName: Deploy release in pre-prod
   dependsOn: Build
-  condition: succeeded()
+  condition: |
+     and(
+     succeeded(),
+     startsWith(variables['Build.SourceBranch'], 'refs/pull'),
+     eq(variables['Build.SourceBranch'], 'refs/heads/release')
+     )
 
   jobs:
   - job: Release
