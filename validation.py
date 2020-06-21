@@ -1,6 +1,6 @@
 def standardise(df):
 
     # DOES SOME STANDARDISATION HERE
-    # Some more code here
+    # Some more code here.
 
     return df
